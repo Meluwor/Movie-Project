@@ -4,6 +4,7 @@ from difflib import SequenceMatcher as SM
 #movies.py:3:0: E0401: Unable to import 'matplotlib.pyplot' (import-error)
 import matplotlib.pyplot as plt # pylint: disable = import-error
 import movie_storage as M_S
+import movie_storage_sql as MSS
 
 # atm the user will have n+1 tries 
 MAX_TRY = 3
@@ -119,11 +120,11 @@ def get_to_main_menu():
   print()
 
 
-def print_titel(titel):
+def print_title(title):
   """
-  This funtion print the title.
+  This function print the title.
   """
-  print(f"{BColors.TITLE}********** {titel} **********\n")
+  print(f"{BColors.TITLE}********** {title} **********\n")
 
 
 def print_movie_exist(movie_name, this_movie_exist):
@@ -147,14 +148,13 @@ def show_main_menu(menu_list):
 
 def does_this_movie_exist(movies, movie_name):
   """
-  This funtion does a simple check if a movie exist.
+  This function does a simple check if a movie exist.
   """
-  return movie_name in movies
-
+  return MSS.does_this_movie_exist(movie_name)
 
 def print_movies(movies):
   """
-  This funtion will list all movies.
+  This function will list all movies.
   """
   print(f"{BColors.INFO}{len(movies)} movies in total.")
   for key, value in movies.items():
@@ -163,14 +163,13 @@ def print_movies(movies):
 
 def add_movie(movies):
   """
-  This funtion will add a new movie.
+  This function will add a new movie.
   """
   movie_name = get_movie_name_from_user()
   if not does_this_movie_exist(movies, movie_name):
     movie_rating = get_movie_rating_from_user("Enter movie rating", False)
     movie_year = get_movie_year_from_user("Enter new movie year: ", False)
-    movies[movie_name] = {"rating": movie_rating, "year": movie_year}
-    M_S.add_movie(movie_name, movie_rating, movie_year)
+    MSS.add_movie(movie_name, movie_year, movie_rating)
     print(f'{BColors.INFO}Added "{movie_name}" to database.')
     return
   print_movie_exist(movie_name,True)
@@ -180,7 +179,7 @@ def add_movie(movies):
 
 def update_movie(movies):
   """
-  This funtion will update a movie. ATM just the rating
+  This function will update a movie. ATM just the rating
   """
   count = 0
   while count <= MAX_TRY:
@@ -188,8 +187,7 @@ def update_movie(movies):
     movie_name = get_movie_name_from_user()
     if does_this_movie_exist(movies, movie_name):
       movie_rating = get_movie_rating_from_user("Enter movie rating: ", False)
-      movies[movie_name]["rating"] = movie_rating
-      M_S.update_movie(movie_name, movie_rating)
+      MSS.update_movie(movie_name,movie_rating)
       print(f'{BColors.INFO}Changed movie rating from "{movie_name}" to: {movie_rating}')
       return
     if count == MAX_TRY:
@@ -200,14 +198,13 @@ def update_movie(movies):
 
 def delete_movie(movies):
   """
-  This funtion will delete a movie.
+  This function will delete a movie.
   """
   count = 0
   while count <= MAX_TRY:
     movie_name = get_movie_name_from_user()
     if does_this_movie_exist(movies, movie_name):
-      movies.pop(movie_name)
-      M_S.delete_movie(movie_name)
+      MSS.delete_movie(movie_name)
       print(f'{BColors.INFO}Removed the movie: "{movie_name}" from database.')
       return
     if count == MAX_TRY:
@@ -219,9 +216,9 @@ def delete_movie(movies):
 
 def print_show_stats(movies):
   """
-  This funktion will show some stats of the movies.
+  This function will show some stats of the movies.
   """
-  print_avarage(movies)
+  print_average(movies)
   print_median(movies)
   print_best_movie(movies, True)
   print_best_movie(movies, False)
@@ -251,13 +248,13 @@ def search_movie(movies, movie_name, is_searched_by_user):
       print()
       return
   movie_list = get_suggested_movie_list(movies, movie_name)
-  lenght = len(movie_list)
-  if lenght == 0:
+  length = len(movie_list)
+  if length == 0:
     print(f'{BColors.INFO}Nothing found:')
     if is_searched_by_user:
       #user has to search till he finds something
       search_movie_by_user(movies)
-  if lenght > 0:
+  if length > 0:
     print(f'{BColors.INFO}The movie {movie_name} does not exist. Did you mean:')
     if is_searched_by_user:
       for movie in movie_list:
@@ -378,7 +375,7 @@ def create_valuation_histogram(movies):
   plt.close()
 
 
-def print_avarage(movies):
+def print_average(movies):
   """
   This function determines the average rating of all movies.
   """
@@ -404,13 +401,13 @@ def get_median(movies):
   list_of_ratings = [movies[movie_name]["rating"] for movie_name in movies]
   list_of_ratings = sorted(list_of_ratings)
   median = 0
-  list_lenght = len(movies)
-  if list_lenght % 2 == 0:
-    med1 = list_of_ratings[list_lenght // 2 - 1]
-    med2 = list_of_ratings[list_lenght // 2]
+  list_length = len(movies)
+  if list_length % 2 == 0:
+    med1 = list_of_ratings[list_length // 2 - 1]
+    med2 = list_of_ratings[list_length // 2]
     median = (med1 + med2) / 2
   else:
-    median = list_of_ratings[list_lenght // 2]
+    median = list_of_ratings[list_length // 2]
   return median
 
 
@@ -472,9 +469,17 @@ def get_main_menu_options():
   main_menu_options = ["Exit", "List movie", "Add movie", "Delete movie",
   "Update movie", "Stats", "Random movie", "Search movie",
   "Movies sorted by rating", "Movies sorted by release",
-  "Filter movies", "Create valuation histogram"
+  "Filter movies", "Create valuation histogram", "Generate website"
   ]
   return main_menu_options
+
+
+def generate_website(movies):
+  """
+  This function will generate a website.
+  """
+  #TODO just implement it
+  print("Successfully generated the website.")
 
 
 def handle_input(movies, user_input):
@@ -502,17 +507,19 @@ def handle_input(movies, user_input):
     filter_movies(movies)
   elif user_input == 11:
     create_valuation_histogram(movies)
+  elif user_input == 12:
+    generate_website(movies)
   else:
     print(BColors.WARNING + "This should not happen!")
 
 
 def main():
   """
-  The main funtion of this py.
+  The main function of this py.
   """
-  movies = M_S.get_movies()
+  movies = MSS.get_list_of_movies()
   main_menu_options = get_main_menu_options()
-  print_titel("My movie database")
+  print_title("My movie database")
   while True:
     there_is_a_movie = len(movies) > 0
     show_main_menu(main_menu_options)
