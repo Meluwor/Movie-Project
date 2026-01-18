@@ -5,9 +5,13 @@ from difflib import SequenceMatcher as SM
 import matplotlib.pyplot as plt # pylint: disable = import-error
 import movie_storage as M_S
 import movie_storage_sql as MSS
+import OMDB_api as API
 
 # atm the user will have n+1 tries 
 MAX_TRY = 3
+
+#im not sure if this is the way to go because im changing/setting it later/at start.
+API_IS_AVAILABLE = False
 
 #pylint: disable = too-few-public-methods
 class BColors:
@@ -512,11 +516,39 @@ def handle_input(movies, user_input):
   else:
     print(BColors.WARNING + "This should not happen!")
 
+def prepare_and_check_api():
+  """
+  This function shall ensure the use of the API
+  """
+  is_available = API.is_internet_available()
+  if not is_available:
+    print(BColors.WARNING + "There is no internet!")
+    return
+  is_available = API.is_api_available()
+  if not is_available:
+    print(BColors.WARNING + "The API is not available at the moment!")
+    return
+  key = API.get_api_key()
+  if not key:
+    print(BColors.WARNING + "There is no API-Key stored!")
+    return
+  API.set_api_key(key)
+  is_available = API.is_api_key_valid()
+  if not is_available:
+    print(BColors.WARNING + "The API-Key is not valid!")
+    return
+  print(BColors.INFO + "API preparation successfully")
+
+  global API_IS_AVAILABLE
+  API_IS_AVAILABLE = is_available
+
+
 
 def main():
   """
   The main function of this py.
   """
+  prepare_and_check_api()
   movies = MSS.get_list_of_movies()
   main_menu_options = get_main_menu_options()
   print_title("My movie database")
