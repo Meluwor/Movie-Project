@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt # pylint: disable = import-error
 import movie_storage as M_S
 import movie_storage_sql as MSS
 import OMDB_api as API
+import data_transform as DF
 
 # atm the user will have n+1 tries 
 MAX_TRY = 3
@@ -162,23 +163,61 @@ def print_movies(movies):
   """
   print(f"{BColors.INFO}{len(movies)} movies in total.")
   for key, value in movies.items():
-    print(f"{BColors.INFO}{key} ({value['year']}): {value['rating']:.1f}")
+    rating = value['rating']
+    if isinstance(rating, float):
+      print(f"{BColors.INFO}{key} ({value['year']}): {value['rating']:.1f}")
+    else:
+      print(f"{BColors.INFO}{key} ({value['year']}): {rating}")
 
+
+def add_movie_via_api(movie_name):
+  """
+  This function tries to get and add a movie from API to database
+  """
+  movie_data = API.get_movie_by_name(movie_name)
+  if movie_data:
+    new_movie = DF.transform_movie_data(movie_data)
+    if new_movie:
+      # i have to check again because the api delivers movie names which could be different to userinput
+      # this caused some trouble already used 2 movie names to test (Sonne/ Mond)
+      if not MSS.does_this_movie_exist(new_movie["title"]):
+        MSS.add_movie(new_movie["title"], new_movie["year"], new_movie["rating"], new_movie["image_url"])
+        print(f'{BColors.INFO}Added "{movie_name}" to database.')
+        return True
+      else:
+        print_movie_exist(movie_name, True)
+    else:
+      print(f'{BColors.INFO} Could not add {movie_name} as new movie.')
+  else:
+    print(f'{BColors.INFO} The Movie {movie_name} was not found.')
+  return False
 
 def add_movie(movies):
   """
   This function will add a new movie.
   """
-  movie_name = get_movie_name_from_user()
-  if not does_this_movie_exist(movies, movie_name):
-    movie_rating = get_movie_rating_from_user("Enter movie rating", False)
-    movie_year = get_movie_year_from_user("Enter new movie year: ", False)
-    MSS.add_movie(movie_name, movie_year, movie_rating)
-    print(f'{BColors.INFO}Added "{movie_name}" to database.')
-    return
-  print_movie_exist(movie_name,True)
-  #hopefully he will get a name
-  add_movie(movies)
+  count = 0
+  while count <= MAX_TRY:
+    count += 1
+    movie_name = get_movie_name_from_user()
+    if not does_this_movie_exist(movies, movie_name):
+      if API_IS_AVAILABLE:
+        if add_movie_via_api(movie_name):
+          return
+      else:
+        print(f'{BColors.INFO} You can just add a movie manually.')
+        movie_rating = get_movie_rating_from_user("Enter movie rating", False)
+        movie_year = get_movie_year_from_user("Enter new movie year: ", False)
+        MSS.add_movie(movie_name, movie_year, movie_rating)
+        print(f'{BColors.INFO}Added "{movie_name}" to database.')
+        return
+    else:
+      print_movie_exist(movie_name,True)
+    if count == MAX_TRY:
+      print(f'{BColors.WARNING}You tried to often!')
+      return
+
+
 
 
 def update_movie(movies):
@@ -218,14 +257,27 @@ def delete_movie(movies):
     count +=1
 
 
+def get_valid_movies(movies):
+  """
+  This function shall ensure to get just movies which have a valid rating
+  """
+  new_movies = {}
+  for key, value in movies.items():
+    rating = value["rating"]
+    if isinstance(rating, (float, int)):
+      new_movies[key] = value
+  return new_movies
+
+
 def print_show_stats(movies):
   """
-  This function will show some stats of the movies.
+  This function will show some stats of the movies only movies which have a rating will be used.
   """
-  print_average(movies)
-  print_median(movies)
-  print_best_movie(movies, True)
-  print_best_movie(movies, False)
+  valid_movies = get_valid_movies(movies)
+  print_average(valid_movies)
+  print_median(valid_movies)
+  print_best_movie(valid_movies, True)
+  print_best_movie(valid_movies, False)
 
 
 def print_random_movie(movies):
@@ -236,8 +288,13 @@ def print_random_movie(movies):
   movie_name = random.choice(list(list_of_movies_keys))
   movie = movies[movie_name]
   movie_rating = movie["rating"]
-  print(f'{BColors.INFO}This will be your movie: '
+  if isinstance(movie_rating, (float, int)):
+    print(f'{BColors.INFO}This will be your movie: '
     f'"{movie_name}" with a rating of: {movie_rating:.1f}')
+  else:
+    print(f'{BColors.INFO}This will be your movie: '
+          f'"{movie_name}" with a rating of: {movie_rating}')
+
 
 
 def search_movie(movies, movie_name, is_searched_by_user):
@@ -247,8 +304,13 @@ def search_movie(movies, movie_name, is_searched_by_user):
   if is_searched_by_user:
     perfect_match = does_this_movie_exist(movies, movie_name)
     if perfect_match:
-      print(f'{BColors.INFO}You got the movie '
-          f'"{movie_name}" with a rating of: {movies[movie_name]["rating"]:.1f}')
+      rating = movies[movie_name]["rating"]
+      if isinstance(rating,(float, int)):
+        print(f'{BColors.INFO}You got the movie '
+          f'"{movie_name}" with a rating of: {rating:.1f}')
+      else:
+        print(f'{BColors.INFO}You got the movie '
+              f'"{movie_name}" with a rating of: {rating}')
       print()
       return
   movie_list = get_suggested_movie_list(movies, movie_name)
@@ -262,7 +324,11 @@ def search_movie(movies, movie_name, is_searched_by_user):
     print(f'{BColors.INFO}The movie {movie_name} does not exist. Did you mean:')
     if is_searched_by_user:
       for movie in movie_list:
-        print(f'{BColors.INFO}{movie}, {movies[movie]["rating"]:.1f}')
+        rating = movies[movie]["rating"]
+        if isinstance(rating,(float,int)):
+          print(f'{BColors.INFO}{movie}, {rating:.1f}')
+        else:
+          print(f'{BColors.INFO}{movie}, {rating}')
     else:
       for movie in movie_list:
         print(f'{BColors.INFO}{movie}')
@@ -299,6 +365,7 @@ def print_top_n_movies(movies):
   """
   This function prints all movies ranked by rating.
   """
+  movies = get_valid_movies(movies)
   sort_by = lambda movie_name: movies[movie_name]["rating"]
   best_movies = sorted(movies, key = sort_by, reverse = True)
   print(BColors.INFO + "The top movies are:")
@@ -327,13 +394,17 @@ def print_movies_sorted_by_release(movies):
   sort_by = lambda movie_name: movies[movie_name]["year"]
   sorted_by_year = sorted(movies, key = sort_by, reverse = sort_by_release)
   for movie in sorted_by_year:
-    print(f'{BColors.INFO}{movie} ({movies[movie]["year"]}): {movies[movie]["rating"]:.1f}')
-
+    rating = movies[movie]["rating"]
+    if isinstance(rating,(int, float)):
+      print(f'{BColors.INFO}{movie} ({movies[movie]["year"]}): {rating:.1f}')
+    else:
+      print(f'{BColors.INFO}{movie} ({movies[movie]["year"]}): {rating}')
 
 def filter_movies(movies):
   """
   This function shall allow the user to filter movies by rating and year.
   """
+  movies = get_valid_movies(movies)
   rating_text = "Enter minimum rating (leave blank for no minimum rating)"
   start_year_text = "Enter start year (leave blank for no start year)"
   end_year_text = "Enter end year (leave blank for no end year)"
@@ -370,6 +441,7 @@ def create_valuation_histogram(movies):
   """
   This function creates a valuation histogram file.
   """
+  movies = get_valid_movies(movies)
   list_of_ratings = [movies[movie_name]["rating"] for movie_name in movies]
   plt.hist(list_of_ratings, bins = "auto")
   plt.title("Movie")
@@ -549,10 +621,13 @@ def main():
   The main function of this py.
   """
   prepare_and_check_api()
-  movies = MSS.get_list_of_movies()
   main_menu_options = get_main_menu_options()
   print_title("My movie database")
   while True:
+    # I have to call this here to get actual data from database else most function will just know the starter data
+    # im not sure if it would be better to change all most function to return the added/updated/etc movie data
+    movies = MSS.get_list_of_movies()
+
     there_is_a_movie = len(movies) > 0
     show_main_menu(main_menu_options)
     user_input = get_menu_option_from_user(len(main_menu_options))
