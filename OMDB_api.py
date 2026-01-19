@@ -1,18 +1,20 @@
-import socket
-from dotenv import load_dotenv
 import os
+import socket
+
 import requests
+from dotenv import load_dotenv
 
 BASE_URL = "http://www.omdbapi.com"
 
-#im not sure if this is the way to go because im changing/setting it later/at start.
+# im not sure if this is the way to go because im changing/setting it later/at start.
 API_KEY = None
 
-#INFO  i tried with header but cant get any results also just found comments in net that also says it need to be send inside the url
-    #headers = {
-       #"apikey": API_KEY
-    #}
-    # just unauthorized
+
+# INFO  I tried with header but cant get any results also just found comments in net that also says it need to be send inside the url
+# headers = {
+# "apikey": API_KEY
+# }
+# just unauthorized
 
 def set_api_key(key):
     """
@@ -45,6 +47,7 @@ def is_internet_available():
     except OSError:
         return False
 
+
 def is_api_available():
     """
     A simple check if the OMDB-Api is available
@@ -56,20 +59,21 @@ def is_api_available():
     except requests.RequestException:
         return False
 
+
 def is_api_key_valid():
     """
     A simple check if the API-Key is valid
     """
-    #The API returns this if the key is not valid   {"Response": "False","Error": "Invalid API key!"}
-    #The status code is 401 in that case
+    # The API returns this if the key is not valid   {"Response": "False","Error": "Invalid API key!"}
+    # The status code is 401 in that case
 
     params = {
         "apikey": API_KEY,
-        "t": "The Matrix"#could be any other available movie title
+        "t": "The Matrix"  # could be any other available movie title
     }
     try:
         response = requests.get(BASE_URL, params=params, timeout=5)
-        #this shall ensure a more stable request
+        # this shall ensure a more stable request
         response.raise_for_status()
         movie_data = response.json()
         return movie_data.get("Response") == "True"
@@ -82,15 +86,15 @@ def get_movie_by_name(movie_name):
     """
     This function shall get a movie from the API by given movie name.
     """
-    #if the movie wasn't found {"Response": "False","Error": "Movie not found!"}
+    # if the movie wasn't found {"Response": "False","Error": "Movie not found!"}
 
     params = {
         "apikey": API_KEY,
-        "t": movie_name # t is the parameter for searching a movie by title
+        "t": movie_name  # t is the parameter for searching a movie by title
     }
     try:
         response = requests.get(BASE_URL, params=params, timeout=5)
-        #this shall ensure a more stable request
+        # this shall ensure a more stable request
         response.raise_for_status()
         movie_data = response.json()
         if movie_data.get("Response") == "True":

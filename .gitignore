@@ -1,3 +1,7 @@
-movie_storage/movies.db
+movies.db
 movie_storage/data.json
 .env
+movie_storage/__pycache__/
+web/__pycache__/
+__pycache__/
+index.html

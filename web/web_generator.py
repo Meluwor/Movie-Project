@@ -1,5 +1,3 @@
-
-
 def get_template_as_string(path):
     """
     This function returns the given template as string.
@@ -8,11 +6,12 @@ def get_template_as_string(path):
         data = a.read()
     return data
 
+
 def serialize_movie(movie_name, movie_data):
     """
     This function serialize a movie.
     """
-    #havnt found/seen a rating at website so just 3 values are needed
+    # havnt found/seen a rating at website so just 3 values are needed
     year = movie_data.get("year")
     url = movie_data.get("image_url")
     return f"""
@@ -36,16 +35,16 @@ def get_movies_as_string(movies):
     return "".join(movie_list)
 
 
-def create_html_page(path,data):
+def create_html_page(path, data):
     """
     This function creates a new "html" file.
     """
-    with open(path,"w")as a:
+    with open(path, "w") as a:
         a.write(data)
 
 
 def generate_web_page(movies, title):
-    template_string = get_template_as_string("index_template.html")
+    template_string = get_template_as_string("web/index_template.html")
     movie_string = get_movies_as_string(movies)
     new_template_string = template_string.replace("__TEMPLATE_TITLE__", title)
     new_template_string = new_template_string.replace("__TEMPLATE_MOVIE_GRID__", movie_string)

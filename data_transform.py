@@ -11,13 +11,14 @@ def get_valid_movie_year(movie_year):
     except (ValueError, TypeError):
         return None
 
+
 def get_valid_movie_rating(rating):
     """
     This function shall ensure to get a proper rating(float) for database if possible.
     """
     try:
         return float(rating)
-    #maybe none so I need type error as well
+    # maybe none so I need type error as well
     except (ValueError, TypeError):
         return None
 
@@ -38,7 +39,7 @@ def transform_movie_data(movie_data):
     This function will transform the data from API to a proper format for the database.
     """
     if movie_data:
-        #I expect a name for each movie else it should never have been found
+        # I expect a name for each movie else it should never have been found
         movie_title = movie_data.get("Title")
         movie_year = get_valid_movie_year(movie_data.get("Year"))
         movie_rating = get_valid_movie_rating(movie_data.get("imdbRating"))
