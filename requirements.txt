@@ -1,0 +1,4 @@
+matplotlib
+sqlalchemy
+requests
+dotenv

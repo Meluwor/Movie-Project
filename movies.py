@@ -3,8 +3,7 @@ from difflib import SequenceMatcher as SM
 # der style test gibt mir diesen hinweis   ka warum aber das diagramm wird gezeichnet
 #movies.py:3:0: E0401: Unable to import 'matplotlib.pyplot' (import-error)
 import matplotlib.pyplot as plt # pylint: disable = import-error
-import movie_storage as M_S
-import movie_storage_sql as MSS
+import movie_storage.movie_storage_sql as MSS
 import OMDB_api as API
 import data_transform as DF
 import web_generator as WG

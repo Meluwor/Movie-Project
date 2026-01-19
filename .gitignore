@@ -1,3 +1,3 @@
-movies.db
-data.json
+movie_storage/movies.db
+movie_storage/data.json
 .env
