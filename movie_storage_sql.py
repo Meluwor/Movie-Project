@@ -12,8 +12,8 @@ with engine.connect() as connection:
         CREATE TABLE IF NOT EXISTS movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT UNIQUE NOT NULL,
-            year INTEGER NOT NULL,
-            rating REAL NOT NULL,
+            year INTEGER,
+            rating REAL,
             image_url TEXT
         )
     """))
@@ -23,9 +23,9 @@ with engine.connect() as connection:
 def get_list_of_movies():
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        result = connection.execute(text("SELECT title, year, rating FROM movies"))
+        result = connection.execute(text("SELECT title, year, rating, image_url FROM movies"))
         movies = result.fetchall()
-    return {row[0]: {"year": row[1], "rating": row[2]} for row in movies}
+    return {row[0]: {"year": row[1], "rating": row[2], "image_url": row[3]} for row in movies}
 
 
 def add_movie(title, year, rating, image_url = None):
@@ -79,12 +79,9 @@ def does_this_movie_exist(movie_name):
     A simple check if this movie exists at database
     """
     with engine.connect() as connection:
-        result = connection.execute(text("SELECT id FROM movies WHERE title =:title LIMIT 1"),
-                                    {'title':movie_name})
-        result = result.first()
-    if result:
-        return True
-    return False
+        query = text("SELECT EXISTS(SELECT id FROM movies WHERE LOWER(title) = LOWER(:title))")
+        result = connection.execute(query, {'title': movie_name}).scalar()
+        return result
 
 
 def get_movie_rating(movie_name):

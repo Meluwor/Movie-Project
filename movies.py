@@ -7,6 +7,7 @@ import movie_storage as M_S
 import movie_storage_sql as MSS
 import OMDB_api as API
 import data_transform as DF
+import web_generator as WG
 
 # atm the user will have n+1 tries 
 MAX_TRY = 3
@@ -554,7 +555,8 @@ def generate_website(movies):
   """
   This function will generate a website.
   """
-  #TODO just implement it
+  title = "My Movie Site"
+  WG.generate_web_page(movies,title)
   print("Successfully generated the website.")
 
 
