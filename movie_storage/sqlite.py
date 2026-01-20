@@ -66,7 +66,7 @@ def update_movie(title, rating):
 
 def check_for_movies():
     """"
-    A simple check if there is anything at database
+    A simple check if there is anything at database.
     """
     with engine.connect() as connection:
         result = connection.execute(text("SELECT id FROM movies LIMIT 1"))
@@ -76,17 +76,17 @@ def check_for_movies():
 
 def does_this_movie_exist(movie_name):
     """"
-    A simple check if this movie exists at database
+    A simple check if this movie exists at database.
     """
     with engine.connect() as connection:
-        query = text("SELECT EXISTS(SELECT id FROM movies WHERE LOWER(title) = LOWER(:title))")
+        query = text("SELECT EXISTS(SELECT id FROM movies WHERE title = :title)")
         result = connection.execute(query, {'title': movie_name}).scalar()
-        return result
+        return bool(result)
 
 
 def get_movie_rating(movie_name):
     """
-    This function will return the rating of a movie
+    This function will return the rating of a movie.
     """
     with engine.connect() as connection:
         result = connection.execute(text("SELECT rating FROM movies WHERE title =:title LIMIT 1"),
@@ -97,7 +97,7 @@ def get_movie_rating(movie_name):
 
 def get_possible_movie_names(movie_name):
     """
-    This function will return a list of possible movie names
+    This function will return a list of possible movie names.
     """
     max_number_of_movie_names = 10
     with engine.connect() as connection:

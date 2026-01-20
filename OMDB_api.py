@@ -104,3 +104,28 @@ def get_movie_by_name(movie_name):
     except requests.RequestException as e:
         print(f"Network error: {e}")
         return {}
+
+
+def search_movie(movie_name):
+    """
+    This function shall get a movie from the API by given movie name.
+    Beware of the following: The movie data will not contain a rating just the rating ID
+    """
+    # if the movie wasn't found {"Response": "False","Error": "Movie not found!"}
+
+    params = {
+        "apikey": API_KEY,
+        "s": movie_name  # s is the parameter for searching a movie by title
+    }
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=5)
+        # this shall ensure a more stable request
+        response.raise_for_status()
+        movie_data = response.json()
+        if movie_data.get("Response") == "True":
+            return movie_data
+        else:
+            return {}
+    except requests.RequestException as e:
+        print(f"Network error: {e}")
+        return {}

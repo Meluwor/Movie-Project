@@ -180,6 +180,7 @@ def add_movie_via_api(movie_name):
     """
     movie_data = API.get_movie_by_name(movie_name)
     if movie_data:
+
         new_movie = DF.transform_movie_data(movie_data)
         if new_movie:
             # i have to check again because the api delivers movie names which could be different to userinput
@@ -207,12 +208,15 @@ def add_movie(movies):
         movie_name = get_movie_name_from_user()
         if not does_this_movie_exist(movies, movie_name):
             if API_IS_AVAILABLE:
+                #the user needs to now the name of the movie to add
+                # if he does not know he can use the search function
                 if add_movie_via_api(movie_name):
                     return
             else:
                 print(f'{BColors.INFO} You can just add a movie manually.')
                 movie_rating = get_movie_rating_from_user("Enter movie rating", False)
                 movie_year = get_movie_year_from_user("Enter new movie year: ", False)
+                #im not sure if the user wants/needs the possibility to add a URL
                 MSS.add_movie(movie_name, movie_year, movie_rating)
                 print(f'{BColors.INFO}Added "{movie_name}" to database.')
                 return
@@ -299,6 +303,32 @@ def print_random_movie(movies):
               f'"{movie_name}" with a rating of: {movie_rating}')
 
 
+def search_with_api(movie_name):
+    """
+    This function will search a movie via API.
+    """
+    api_searched_movies = API.search_movie(movie_name)
+    movie_list = DF.get_movie_list(api_searched_movies)
+    # sometimes there was a name was twice in list I don't know why
+    movie_list = set(movie_list)
+    new_movie_list = []
+    if movie_list:
+        for movie in movie_list:
+            # im not sure how the api will react with this multiple request
+            # but I have not found/seen a possibility to request multiple title in just one request
+            #I also expect that all request will have a result cause the movie names are provided by the api
+            new_movie = API.get_movie_by_name(movie)
+            new_movie = DF.transform_movie_data(new_movie)
+            movie_title = new_movie.get("title")
+            rating = new_movie.get("rating")
+            if isinstance(rating, (float, int)):
+                print(f'{BColors.INFO}{movie_title}, {rating:.1f}')
+            else:
+                print(f'{BColors.INFO}{movie_title}, {rating}')
+    else:
+        print(f'{BColors.INFO}Nothing found.')
+
+
 def search_movie(movies, movie_name, is_searched_by_user):
     """
     This function search for a movie name.
@@ -318,10 +348,8 @@ def search_movie(movies, movie_name, is_searched_by_user):
     movie_list = get_suggested_movie_list(movies, movie_name)
     length = len(movie_list)
     if length == 0:
-        print(f'{BColors.INFO}Nothing found:')
-        if is_searched_by_user:
-            # user has to search till he finds something
-            search_movie_by_user(movies)
+        print(f'{BColors.INFO}Nothing found at database:')
+        return
     if length > 0:
         print(f'{BColors.INFO}The movie {movie_name} does not exist. Did you mean:')
         if is_searched_by_user:
@@ -338,7 +366,7 @@ def search_movie(movies, movie_name, is_searched_by_user):
 
 def get_suggested_movie_list(movies, movie_name):
     """
-    This function will return a list of possible movie names
+    This function will return a list of possible movie names which exist at database
     """
     key_lower = ""
     movie_list = []
@@ -359,8 +387,21 @@ def search_movie_by_user(movies):
     """
     This function search for a movie name by a given user input.
     """
-    movie_name = get_user_input(BColors.INPUT + "Enter part of movie name: ").lower()
-    search_movie(movies, movie_name, True)
+    search_via_api = False
+    if API_IS_AVAILABLE:
+        while True:
+            user_input = get_user_input(f'{BColors.INPUT}Do you want to search with API(Y/N)? ').lower()
+            if user_input in ("n", "y"):
+                if user_input == "y":
+                    search_via_api = True
+                break
+            print(f'{BColors.INFO}Please enter (Y/N)? ')
+    movie_name = get_user_input(BColors.INPUT + "Enter part of movie name: ")
+    if search_via_api:
+        search_with_api(movie_name)
+    else:
+        search_movie(movies, movie_name, True)
+
 
 
 def print_top_n_movies(movies):

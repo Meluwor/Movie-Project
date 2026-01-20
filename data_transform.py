@@ -34,6 +34,15 @@ def get_valid_image_url(url):
     return None
 
 
+def get_movie_list(movie_data):
+    """
+    This function shall ensure to get a list of just movie names.
+    movie_data will look like {'Search': [{'Title': 'title', 'Year': '2005', 'imdbID': 'tt0486768', 'Type': 'movie', 'Poster': 'N/A'}
+    """
+    if movie_data and "Search" in movie_data:
+        return [movie.get("Title") for movie in movie_data["Search"] if movie.get("Title")]
+    return []
+
 def transform_movie_data(movie_data):
     """
     This function will transform the data from API to a proper format for the database.
